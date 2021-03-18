@@ -127,7 +127,7 @@ namespace EcoSystemAPI.Controllers
             _mapper.Map(modifiedData, user);
             _accRepo.UpdateAccount(user);
             _accRepo.SaveChanges();
-            return Ok(new {message="Password successfully been updated. Please exit the link"});
+            return Ok(new {message="Password successfully been updated"});
 
         }
 

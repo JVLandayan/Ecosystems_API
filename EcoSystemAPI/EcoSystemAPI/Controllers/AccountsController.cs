@@ -70,26 +70,33 @@ namespace EcoSystemAPI.Controllers
 
         public ActionResult<AccountsReadDto> CreateAccount(AccountsCreateDto accountCreateDto)
         {
-
-            var modifiedData = new AccountsCreateDto
+            var userExists = _repository.GetAllAccounts().Any(p => p.Email == accountCreateDto.Email);
+            if (userExists)
             {
-                FirstName = accountCreateDto.FirstName.ToUpper(),
-                PhotoFileName = accountCreateDto.PhotoFileName,
-                AuthId = 2,
-                Email = accountCreateDto.Email.ToLower(),
-                LastName = accountCreateDto.LastName.ToUpper(),
-                MiddleName = accountCreateDto.MiddleName.ToUpper(),
-                Password = "123",
-                ResetToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(DateTime.Now.ToString("yyyyMMddHHmmssfff")))
-            };
+                return BadRequest(new { message = "Email is currently being used" });
+            }
+
+                var modifiedData = new AccountsCreateDto
+                {
+                    FirstName = accountCreateDto.FirstName.ToUpper(),
+                    PhotoFileName = accountCreateDto.PhotoFileName,
+                    AuthId = 2,
+                    Email = accountCreateDto.Email.ToLower(),
+                    LastName = accountCreateDto.LastName.ToUpper(),
+                    MiddleName = accountCreateDto.MiddleName.ToUpper(),
+                    Password = "123",
+                    ResetToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(DateTime.Now.ToString("yyyyMMddHHmmssfff")))
+                };
+
+
+                var accountModel = _mapper.Map<Account>(modifiedData);
+                _repository.CreateAccount(accountModel);
+                _repository.SaveChanges();
+
+                var accountsReadDto = _mapper.Map<AccountsReadDto>(accountModel);
+                return CreatedAtRoute(nameof(GetAccountsById), new { Id = accountsReadDto.Id }, accountsReadDto);
 
             
-            var accountModel = _mapper.Map<Account>(modifiedData);
-            _repository.CreateAccount(accountModel);
-            _repository.SaveChanges();
-
-            var accountsReadDto = _mapper.Map<AccountsReadDto>(accountModel);
-            return CreatedAtRoute(nameof(GetAccountsById), new { Id = accountsReadDto.Id }, accountsReadDto);
 
         }
 
