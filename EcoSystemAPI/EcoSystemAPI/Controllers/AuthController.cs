@@ -71,7 +71,7 @@ namespace EcoSystemAPI.Controllers
             client.EnableSsl = true;
             client.DeliveryMethod = SmtpDeliveryMethod.Network;
             client.UseDefaultCredentials = false;
-            client.Credentials = new NetworkCredential("ecotigers.ust@gmail.com", "landayan24");
+            client.Credentials = new NetworkCredential("ecotigers.ust@gmail.com", "abcdEcosystem123");
             MailMessage msg = new MailMessage();
 
             //Token config
