@@ -54,7 +54,8 @@ namespace EcoSystemAPI.Controllers
                 Content = WebUtility.HtmlDecode(article.Content).ToString(),
                 DateofPublish = article.DateofPublish,
                 Name = article.Name,
-                ContentIntro = article.ContentIntro
+                ContentIntro = article.ContentIntro,
+                AuthorId = article.AuthorId
             };
             if (article != null)
             {
@@ -77,7 +78,8 @@ namespace EcoSystemAPI.Controllers
                 Image = articleCreateDto.Image,
                 DateofPublish = DateTime.Now.ToString("dd/MM/yy"),
                 Name = articleCreateDto.Name,
-                ContentIntro = articleCreateDto.ContentIntro
+                ContentIntro = articleCreateDto.ContentIntro,
+                AuthorId = articleCreateDto.AuthorId
             };
             var articleModel = _mapper.Map<Article>(convertedData);
             _repository.CreateArticle(articleModel);
@@ -102,6 +104,7 @@ namespace EcoSystemAPI.Controllers
                 AuthorImg = articleModelFromRepo.AuthorImg,
                 AuthorName = articleModelFromRepo.AuthorName,
                 DateofPublish = articleModelFromRepo.DateofPublish,
+                AuthorId = articleModelFromRepo.AuthorId
             };
 
             if (articleModelFromRepo == null)

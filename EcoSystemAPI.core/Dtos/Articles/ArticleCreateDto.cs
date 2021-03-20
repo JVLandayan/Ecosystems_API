@@ -20,6 +20,8 @@ namespace EcoSystemAPI.Core.Dtos
         [Required]
         public string Image { get; set; }
         [Required]
+        public string AuthorId { get; set; }
+        [Required]
         public string Content { get; set; }
         [Required]
         public string ContentIntro { get; set; }

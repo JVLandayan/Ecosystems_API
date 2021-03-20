@@ -64,10 +64,9 @@ namespace EcoSystemAPI.Controllers
                 return NotFound();
 
         }
-      
 
         [HttpPost]
-
+        [Authorize]
         public ActionResult<AccountsReadDto> CreateAccount(AccountsCreateDto accountCreateDto)
         {
             var userExists = _repository.GetAllAccounts().Any(p => p.Email == accountCreateDto.Email);
@@ -99,42 +98,21 @@ namespace EcoSystemAPI.Controllers
             
 
         }
-
-        [HttpPut("{id}")]
-        [Authorize]
-        public ActionResult UpdateAccount(int id,AccountsUpdateDto accountsUpdateDto, string passOld)
+        // GET api/accounts/author/
+        [HttpGet("author/{id}")]
+        public ActionResult<IEnumerable<AccountsAuthorRead>> GetAuthorById(int id)
         {
-            var accountsModelFromRepo = _repository.GetAccountsById(id);
-
-            if(accountsModelFromRepo.Password != passOld)
+            var accountItem = _repository.GetAccountsById(id);
+            if (accountItem != null)
             {
-                return Unauthorized("Wrong password");
+                return Ok(_mapper.Map<AccountsAuthorRead>(accountItem));
             }
-
-            var modifiedData = new AccountsUpdateDto
-            {
-                FirstName = accountsModelFromRepo.FirstName,
-                Email = accountsModelFromRepo.Email,
-                LastName = accountsModelFromRepo.LastName,
-                MiddleName = accountsModelFromRepo.MiddleName,
-                Password = accountsUpdateDto.Password,
-                PhotoFileName = accountsModelFromRepo.PhotoFileName,
-                ResetToken = accountsModelFromRepo.ResetToken
-            };
-
-            if(accountsModelFromRepo == null)
-            {
+            else
                 return NotFound();
-            }
-            _mapper.Map(modifiedData, accountsModelFromRepo);
-
-            _repository.UpdateAccount(accountsModelFromRepo);
-
-            _repository.SaveChanges();
-
-            return NoContent();
 
         }
+
+
 
         [HttpPatch("{id}")]
         [Authorize]
@@ -206,6 +184,8 @@ namespace EcoSystemAPI.Controllers
                 return new JsonResult("Anonymous.png");
             }
         }
+
+        
 
     }
 

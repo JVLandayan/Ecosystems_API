@@ -22,6 +22,7 @@ namespace EcoSystemAPI.Context.Models
         [Column(TypeName = "varchar(MAX)")]
         public string Image { get; set; }
 
+        public string AuthorId { get; set; }
 
         public string ContentIntro { get; set; }
         [Column(TypeName = "nvarchar(MAX)")]

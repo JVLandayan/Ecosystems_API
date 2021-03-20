@@ -14,6 +14,7 @@ namespace EcoSystemAPI.Core.Dtos
         public string Name { get; set; }
         public string DateofPublish { get; set; }
         public string Image { get; set; }
+        public string AuthorId { get; set; }
         public string Content { get; set; }
         public string ContentIntro { get; set; }
     }

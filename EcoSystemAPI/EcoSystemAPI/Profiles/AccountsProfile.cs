@@ -14,6 +14,7 @@ namespace EcoSystemAPI.Profiles
         {
             //Source -> Target
             CreateMap<Account, AccountsReadDto>();
+            CreateMap<Account, AccountsAuthorRead>();
             CreateMap<AccountsCreateDto, Account>();
             CreateMap<AccountsUpdateDto, Account>();
             CreateMap<Account, AccountsUpdateDto>();
