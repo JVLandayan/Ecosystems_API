@@ -11,7 +11,6 @@ namespace EcoSystemAPI.Core.Dtos
         public string MerchName { get; set; }
         [Required]
         public string MerchDetails { get; set; }
-        [Required]
         public string MerchLink { get; set; }
         [Required]
         public string MerchImage { get; set; }
