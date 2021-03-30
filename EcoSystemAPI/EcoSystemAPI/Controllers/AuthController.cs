@@ -43,17 +43,12 @@ namespace EcoSystemAPI.Controllers
             _configuration = configuration;
             _mapper = mapper;
             _authRepo = authRepo;
-            
+ 
         }
 
         [HttpPost]
         public IActionResult Authenticate(AuthenticateRequest model)
         {
-            var modifiedModel = new AuthenticateRequest
-            {
-                Email = model.Email.ToLower(),
-                Password = model.Password
-            };
             var response = _userService.Authenticate(model);
 
             if (response == null)
@@ -104,26 +99,32 @@ namespace EcoSystemAPI.Controllers
         }
 
         [HttpPost("ResetPassword")]
-        public IActionResult ResetPassword(ResetPasswordDto model)
+        public IActionResult ResetPassword([FromBody]ResetPasswordDto model)
         {
-            var user = _accRepo.GetAccountByEmail(model.Email);
+            var modifiedModel = new ResetPasswordDto
+            {
+                Email = model.Email,
+                NewPassword = _userService.HashPassword(model.NewPassword),
+                Token = model.Token
+            };
+            var user = _accRepo.GetAccountByEmail(modifiedModel.Email);
             if (user == null )
             {
                 return BadRequest(new { message = "No user associated with given email" });
             }
-            if(user.Password == model.NewPassword)
+            if(user.Password == modifiedModel.NewPassword)
             {
                 return BadRequest(new { message = "Input password is the current password" });
             }
 
-            var decodedToken = WebEncoders.Base64UrlDecode(model.Token);
+            var decodedToken = WebEncoders.Base64UrlDecode(modifiedModel.Token);
             string normalToken = Encoding.UTF8.GetString(decodedToken);
 
             if(normalToken != user.ResetToken)
             {
                 return BadRequest();
             };
-            var modifiedData = _authRepo.UpdateAccount(model, user);
+            var modifiedData = _authRepo.UpdateAccount(modifiedModel, user);
             _mapper.Map(modifiedData, user);
             _accRepo.UpdateAccount(user);
             _accRepo.SaveChanges();

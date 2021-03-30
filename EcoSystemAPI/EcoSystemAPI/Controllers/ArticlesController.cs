@@ -45,7 +45,13 @@ namespace EcoSystemAPI.Controllers
         public ActionResult<IEnumerable<ArticleReadDto>> GetArticleById(int id)
         {
             var article = _repository.GetArticleById(id);
-                var convertedData = new Article
+            
+            if (article == null)
+            {
+                return NotFound(new { message = "Article doesn't exist" });
+            }
+
+            var convertedData = new Article
             {
                 Id = article.Id,
                 Image = article.Image,

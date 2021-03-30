@@ -15,6 +15,7 @@ using EcoSystemAPI.util.services;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using System.Security.Cryptography;
 
 namespace EcosystemAPI.util.services
 {
@@ -22,7 +23,9 @@ namespace EcosystemAPI.util.services
     {
         AuthenticateResponse Authenticate(AuthenticateRequest model);
         Account GetById(int id);
-        
+        string HashPassword(string password);
+
+
     }
 
     public class UserService : IUserService
@@ -30,13 +33,13 @@ namespace EcosystemAPI.util.services
         // users hardcoded for simplicity, store in a db with hashed passwords in production applications
         private readonly AppSettings _appSettings;
         private readonly EcosystemContext _context;
-        private IMailService _mailService;
 
-        public UserService(IOptions<AppSettings> appSettings, EcosystemContext context, IMailService mailService)
+
+        public UserService(IOptions<AppSettings> appSettings, EcosystemContext context)
         {
             _appSettings = appSettings.Value;
             _context = context;
-            _mailService = mailService;
+
         }
 
 
@@ -47,7 +50,7 @@ namespace EcosystemAPI.util.services
 
         public AuthenticateResponse Authenticate(AuthenticateRequest model)
         {
-            var account = _context.Accounts.SingleOrDefault(x => x.Email == model.Email && x.Password == model.Password);
+            var account = _context.Accounts.SingleOrDefault(x => x.Email == model.Email && x.Password == HashPassword(model.Password));
 
             // return null if user not found
             if (account == null) return null;
@@ -57,8 +60,6 @@ namespace EcosystemAPI.util.services
 
             return new AuthenticateResponse(account, token);
         }
-
-
 
         public Account GetById(int id)
         {
@@ -80,6 +81,19 @@ namespace EcosystemAPI.util.services
             };
             var token = tokenHandler.CreateToken(tokenDescriptor);
             return tokenHandler.WriteToken(token);
+        }
+
+        public string HashPassword(string password)
+        {
+            var passBytes = Encoding.ASCII.GetBytes(password);
+            var sha = new SHA512Managed();
+            var hash = sha.ComputeHash(passBytes);
+            var encryptedPass = ""; 
+            foreach (byte b in hash)
+            {
+                encryptedPass += b.ToString("x2");
+            }
+            return encryptedPass;
         }
 
     }

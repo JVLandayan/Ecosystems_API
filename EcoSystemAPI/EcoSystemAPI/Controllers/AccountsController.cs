@@ -20,24 +20,29 @@ using EcoSystemAPI.uow.Interfaces;
 using EcoSystemAPI.Core.Dtos;
 using Microsoft.AspNetCore.WebUtilities;
 using System.Text;
+using System.Security.Cryptography;
+using EcosystemAPI.util.services;
 
 namespace EcoSystemAPI.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+
     public class AccountsController : ControllerBase
     {
         private readonly IConfiguration _configuration;
         private readonly IAccountsRepo _repository;
         private readonly IMapper _mapper;
         private readonly IWebHostEnvironment _env;
+        private IUserService _userService;
 
-        public AccountsController(IAccountsRepo repository, IConfiguration configuration, IMapper mapper, IWebHostEnvironment env)
+        public AccountsController(IAccountsRepo repository, IConfiguration configuration, IMapper mapper, IWebHostEnvironment env, IUserService userService)
         {
             _configuration = configuration;
             _repository = repository;
             _mapper = mapper;
             _env = env;
+            _userService = userService;
         }
 
         //api/accounts
@@ -47,7 +52,6 @@ namespace EcoSystemAPI.Controllers
         {
             var accountItems = _repository.GetAllAccounts();
             return Ok(_mapper.Map<IEnumerable<AccountsReadDto>>(accountItems));
-
         }
 
         //api/accounts/{id}
@@ -61,7 +65,7 @@ namespace EcoSystemAPI.Controllers
                 return Ok(_mapper.Map<AccountsReadDto>(accountItem));
             }
             else
-                return NotFound();
+                return NotFound(new { message = "Account doesn't exist" });
 
         }
 
@@ -69,23 +73,24 @@ namespace EcoSystemAPI.Controllers
         [Authorize]
         public ActionResult<AccountsReadDto> CreateAccount(AccountsCreateDto accountCreateDto)
         {
+            
             var userExists = _repository.GetAllAccounts().Any(p => p.Email == accountCreateDto.Email);
             if (userExists)
             {
                 return BadRequest(new { message = "Email is currently being used" });
             }
 
-                var modifiedData = new AccountsCreateDto
-                {
-                    FirstName = accountCreateDto.FirstName.ToUpper(),
-                    PhotoFileName = accountCreateDto.PhotoFileName,
-                    AuthId = 2,
-                    Email = accountCreateDto.Email.ToLower(),
-                    LastName = accountCreateDto.LastName.ToUpper(),
-                    MiddleName = accountCreateDto.MiddleName.ToUpper(),
-                    Password = "123",
-                    ResetToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(DateTime.Now.ToString("yyyyMMddHHmmssfff")))
-                };
+            var modifiedData = new AccountsCreateDto
+            {
+                FirstName = accountCreateDto.FirstName.ToUpper(),
+                PhotoFileName = accountCreateDto.PhotoFileName,
+                AuthId = 2,
+                Email = accountCreateDto.Email.ToLower(),
+                LastName = accountCreateDto.LastName.ToUpper(),
+                MiddleName = accountCreateDto.MiddleName.ToUpper(),
+                Password = _userService.HashPassword("123"),
+                ResetToken = WebEncoders.Base64UrlEncode(Encoding.UTF8.GetBytes(DateTime.Now.ToString("yyyyMMddHHmmssfff")))
+             };
 
 
                 var accountModel = _mapper.Map<Account>(modifiedData);
@@ -103,6 +108,10 @@ namespace EcoSystemAPI.Controllers
         public ActionResult<IEnumerable<AccountsAuthorRead>> GetAuthorById(int id)
         {
             var accountItem = _repository.GetAccountsById(id);
+            if (accountItem == null)
+            {
+                return NotFound(new { message = "Account doesn't exist" });
+            }
             if (accountItem != null)
             {
                 return Ok(_mapper.Map<AccountsAuthorRead>(accountItem));
@@ -126,7 +135,8 @@ namespace EcoSystemAPI.Controllers
             }
 
             var accountToPatch = _mapper.Map<AccountsUpdateDto>(accountModelFromRepo);
-            patchDoc.ApplyTo(accountToPatch, ModelState);
+
+
             if(!TryValidateModel(accountToPatch))
             {
                 return ValidationProblem();
@@ -137,6 +147,74 @@ namespace EcoSystemAPI.Controllers
             return NoContent();
 
         }
+
+
+
+        [HttpPut("{id}/image")]
+        [Authorize]
+
+        public ActionResult UpdateAccount(int id, AccountsUpdateDto accountsUpdateDto)
+        {
+            var accountModelFromRepo = _repository.GetAccountsById(id);
+            if (accountModelFromRepo == null)
+            {
+                return NotFound();
+            }
+            var modifiedData = new AccountsUpdateDto
+            {
+                Email = accountModelFromRepo.Email,
+                FirstName = accountModelFromRepo.FirstName,
+                LastName = accountModelFromRepo.LastName,
+                MiddleName = accountModelFromRepo.MiddleName,
+                Password = accountModelFromRepo.Password,
+                PhotoFileName = accountsUpdateDto.PhotoFileName,
+                ResetToken = accountModelFromRepo.ResetToken
+            };
+
+
+
+            _mapper.Map(modifiedData, accountModelFromRepo);
+
+            _repository.UpdateAccount(accountModelFromRepo);
+
+            _repository.SaveChanges();
+
+            return NoContent();
+        }
+
+        [HttpPut("{id}/pass")]
+        [Authorize]
+
+        public ActionResult UpdatePassword(int id, AccountsUpdateDto accountsUpdateDto)
+        {
+            var accountModelFromRepo = _repository.GetAccountsById(id);
+            if (accountModelFromRepo == null)
+            {
+                return NotFound();
+            }
+
+            var modifiedData = new AccountsUpdateDto
+            {
+                Email = accountModelFromRepo.Email,
+                FirstName = accountModelFromRepo.FirstName,
+                LastName = accountModelFromRepo.LastName,
+                MiddleName = accountModelFromRepo.MiddleName,
+                Password = _userService.HashPassword(accountsUpdateDto.Password),
+                PhotoFileName = accountModelFromRepo.PhotoFileName,
+                ResetToken = accountModelFromRepo.ResetToken
+            };
+
+
+
+            _mapper.Map(modifiedData, accountModelFromRepo);
+
+            _repository.UpdateAccount(accountModelFromRepo);
+
+            _repository.SaveChanges();
+
+            return NoContent();
+        }
+
 
         [HttpDelete("{id}")]
         [Authorize]
@@ -184,8 +262,6 @@ namespace EcoSystemAPI.Controllers
                 return new JsonResult("Anonymous.png");
             }
         }
-
-        
 
     }
 

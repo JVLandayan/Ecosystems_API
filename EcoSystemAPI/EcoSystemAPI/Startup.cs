@@ -24,7 +24,9 @@ using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.OpenApi.Models;
 using Newtonsoft.Json.Serialization;
+using Swashbuckle.AspNetCore;
 
 namespace EcoSystemAPI
 {
@@ -41,6 +43,7 @@ namespace EcoSystemAPI
         public void ConfigureServices(IServiceCollection services)
         {
             services.Configure<ApplicationSettings>(Configuration.GetSection("ApplicationSettings"));
+            services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
             services.AddDbContext<EcosystemContext>(opt => opt.UseSqlServer(Configuration.GetConnectionString("EcosystemAppCon")));
             //Enable Cors
 
@@ -57,7 +60,6 @@ namespace EcoSystemAPI
                 });
             });
 
-            services.Configure<AppSettings>(Configuration.GetSection("AppSettings"));
             services.AddScoped<IUserService, UserService>();
             services.AddScoped<IAccountsRepo, SqlAccountsRepo>();
             services.AddScoped<IMerchandiseRepo, SqlMerchandiseRepo>();
@@ -70,6 +72,10 @@ namespace EcoSystemAPI
             services.ConfigureCors();
             services.ConfigureIISIntegration();
             services.AddControllers();
+            services.AddSwaggerGen(c =>
+            {
+                c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
+            });
 
 
             //JSON Serializer
@@ -107,6 +113,12 @@ namespace EcoSystemAPI
             {
                 FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "Photos")),
                 RequestPath = "/Photos"
+            });
+
+            app.UseSwagger();
+            app.UseSwaggerUI(c =>
+            {
+                c.SwaggerEndpoint("v1/swagger.json", "My API V1");
             });
         }
     }
